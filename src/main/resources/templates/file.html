@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en"
+    xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+  <title>File</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  
+  <!--bootgrid  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-bootgrid/1.3.1/jquery.bootgrid.fa.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-bootgrid/1.3.1/jquery.bootgrid.fa.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-bootgrid/1.3.1/jquery.bootgrid.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-bootgrid/1.3.1/jquery.bootgrid.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-bootgrid/1.3.1/jquery.bootgrid.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-bootgrid/1.3.1/jquery.bootgrid.min.css"/>
+  
+  <!-- sweetalert  -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-sweetalert/1.0.1/sweetalert.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-sweetalert/1.0.1/sweetalert.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-sweetalert/1.0.1/sweetalert.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-sweetalert/1.0.1/sweetalert.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-sweetalert/1.0.1/sweetalert.min.js"></script>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/4.4.6/js/fileinput.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/4.4.6/css/fileinput.min.css" />
+  
+  <style>
+    /* Remove the navbar's default margin-bottom and rounded borders */ 
+    .navbar {
+      margin-bottom: 0;
+      border-radius: 0;
+    }
+    
+    /* Set height of the grid so .sidenav can be 100% (adjust as needed) */
+    .row.content {height: 450px}
+    
+    /* Set gray background color and 100% height */
+    .sidenav {
+      padding-top: 20px;
+      background-color: #f1f1f1;
+      height: 100%;
+    }
+    
+    /* Set black background color, white text and some padding */
+    footer {
+      background-color: #555;
+      color: white;
+      padding: 15px;
+    }
+    
+    /* On small screens, set height to 'auto' for sidenav and grid */
+    @media screen and (max-width: 767px) {
+      .sidenav {
+        height: auto;
+        padding: 15px;
+      }
+      .row.content {height:auto;} 
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-inverse">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>                        
+      </button>
+      <a class="navbar-brand" href="#">Logo</a>
+    </div>
+    <div class="collapse navbar-collapse" id="myNavbar">
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="#">Home</a></li>
+        <li><a href="#">About</a></li>
+        <li><a href="#">Projects</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+  
+<div class="container-fluid text-center">    
+  <div class="row content">
+    <div class="col-sm-9 text-left">
+<table id="grid" class="table table-condensed table-hover table-striped">
+    <thead>
+        <tr>
+            <th data-column-id="fileOrignName" data-sortable="false">原名称</th>
+            <th data-column-id="fileNewName" data-sortable="false" width="200%">新名称</th>
+            <th data-column-id="size" data-sortable="false">文件大小</th>
+            <th data-column-id="createdDate" data-sortable="false" >创建时间</th>
+            <th data-column-id="createdBy" data-sortable="false">创建者</th>
+            <th data-column-id="commands" data-formatter="commands" data-sortable="false">Commands</th>
+        </tr>
+    </thead>
+</table>
+    </div>
+     <div class="col-sm-3 sidenav">
+      <div>
+      <input type="file" name="file" id="file"/>
+      </div>
+     </div>    
+  </div>
+</div>
+
+<footer class="container-fluid text-center">
+  <p>Footer Text</p>
+</footer>
+
+</body>
+
+<script>
+var grid = $("#grid").bootgrid({
+    ajax: true,
+    post: function ()
+    {
+    },
+    url: "/ppt/grid/data",
+    formatters: {
+        "commands": function(column, row)
+        {
+        	 return '<button title="预览" value="'+row.id+'" type="button" id="preview_'+row.id+'" class="btn btn-sm btn-success  command-view" data-row-id= "'+row.id+'"><span class="glyphicon glyphicon-zoom-in"></span></button>'
+        	 +'<button title="下载" value="'+row.id+'" type="button" id="button_'+row.id+'" class="btn btn-sm btn-primary command-download" data-row-id= "'+row.id+'"><span class="glyphicon glyphicon-cloud-download"></span></button>'
+        	 +'<button title="删除" value="'+row.id+'" type="button" id="delete_'+row.id+'" class="btn btn-sm btn-danger command-delete" data-row-id= "'+row.id+'"><span class="glyphicon glyphicon-trash"></span></button>';     
+        }
+    }
+}).on("loaded.rs.jquery.bootgrid", function()
+{
+    /* Executes after data is loaded and rendered */
+    grid.find(".command-view").on("click", function(e)
+    {showLoading("loading");
+    	location.href ="preview/"+$(this).val();
+    	
+    }).end().find(".command-download").on("click", function(e)
+    {
+    	location.href = "/download/"+$(this).val();
+    }).end().find(".command-delete").on("click", function(e)
+    {	  	   						
+			var ul = "/delete/"+$(this).val();
+			swal({
+				title: "操作提示", //弹出框的title
+				text: "确定删除吗？", //弹出框里面的提示文本
+				type: "warning", //弹出框类型
+				showCancelButton: true, //是否显示取消按钮
+				confirmButtonColor: "#DD6B55",//确定按钮颜色
+				cancelButtonText: "取消",//取消按钮文本
+				confirmButtonText: "是的，确定删除！",//确定按钮上面的文档
+				closeOnConfirm: true
+			},
+			function(isTrue){
+				if(isTrue){
+					location.href = ul;				
+				}	  	    				
+			}	  	    			
+			);
+    });
+});
+$(document).ready(function () {  	
+	Initfileinput("/upload");
+    initLoading();
+	        });  
+	 
+	
+	
+	$(document).ready(
+	      function(){
+	    	  $("button[id^='preview']").click(
+	    		function(){
+	    			location.href ="preview/"+$(this).val();
+	    			/* alert("Preview"+$(this).val()); */
+	    		}	  
+	    	  );
+	    	  $("button[id^='download']").click(
+	  	    		function(){
+	  	    			location.href = "/download/"+$(this).val();
+	  	    			/* alert("download"+$(this).val()); */
+	  	    		}	  
+	  	    	  );
+	    	  $("button[id^='delete']").click(
+	  	    		function(){
+	  	    			/* location.href ="/delete/"+$(this).val(); */
+	  	    			/* alert("delete"+$(this).val()); */
+	  	    			var ul = "/delete/"+$(this).val();
+	  	    			swal({
+	  	    				title: "操作提示", //弹出框的title
+	  	    				text: "确定删除吗？", //弹出框里面的提示文本
+	  	    				type: "warning", //弹出框类型
+	  	    				showCancelButton: true, //是否显示取消按钮
+	  	    				confirmButtonColor: "#DD6B55",//确定按钮颜色
+	  	    				cancelButtonText: "取消",//取消按钮文本
+	  	    				confirmButtonText: "是的，确定删除！",//确定按钮上面的文档
+	  	    				closeOnConfirm: true
+	  	    			},
+	  	    			function(isTrue){
+	  	    				if(isTrue){
+	  	    					location.href = ul;
+	  	    				}	  	    				
+	  	    			}	  	    			
+	  	    			);
+	  	    		}	  
+	  	    	  );
+	    	  
+	      }     	
+	      
+	);
+	
+	
+	
+	/*加载上传控件*/
+    Initfileinput = function (uploadurl){
+        $("#file").fileinput({
+            //uploadUrl: "../fileinfo/save", // server upload action
+            showUpload: true,
+            uploadUrl:uploadurl,
+            uploadsync: true,
+            required: true,
+            showBrowse: true, 
+            browseOnZoneClick: true,
+            dropZoneEnabled: false,
+            showCaption : true,
+            allowedFileExtensions: ["ppt", "pptx"],//只能选择xls,和xlsx格式的文件提交
+            //maxFileSize: 0,//单位为kb，如果为0表示不限制文件大小
+            /*不同文件图标配置*/
+            previewFileIconSettings: { 
+                 'docx': '<i class="fa fa-file-word-o text-primary" ></i>',
+                 'xlsx': '<i class="fa fa-file-excel-o text-success"></i>',
+                 'pptx': '<i class="fa fa-file-powerpoint-o text-danger"></i>',
+                 'jpg': '<i class="fa fa-file-photo-o text-warning"></i>',
+                 'pdf': '<i class="fa fa-file-pdf-o text-danger"></i>',
+                 'zip': '<i class="fa fa-file-archive-o text-muted"></i>',
+                 'doc': '<i class="fa fa-file-word-o text-primary"></i>',
+                 'xls': '<i class="fa fa-file-excel-o text-success"></i>',
+                 'ppt': '<i class="fa fa-file-powerpoint-o text-danger"></i>',
+                 'pdf': '<i class="fa fa-file-pdf-o text-danger"></i>',
+                 'zip': '<i class="fa fa-file-archive-o text-muted"></i>',
+                 'htm': '<i class="fa fa-file-code-o text-info"></i>',
+                 'txt': '<i class="fa fa-file-text-o text-info"></i>',
+                 'mov': '<i class="fa fa-file-movie-o text-warning"></i>',
+                 'mp3': '<i class="fa fa-file-audio-o text-warning"></i>',
+                 'jpg': '<i class="fa fa-file-photo-o text-danger"></i>', 
+                 'gif': '<i class="fa fa-file-photo-o text-muted"></i>', 
+                 'png': '<i class="fa fa-file-photo-o text-primary"></i>'    
+            },
+            layoutTemplates:{ actionUpload:''}, 
+            /*上传成功之后运行*/
+          fileuploaded: $("#file").on("fileuploaded", function (event, data, previewId, index) {                         
+        	  refreshGrid();
+          }),  
+            /*上传出错误处理*/
+          fileerror:$('#file').on('fileerror', function(event, data, msg) {
+        	  alert("Upload failed")
+            }), 
+        });
+    }
+	
+    function refreshGrid(){
+		 $("#grid").bootgrid("reload");
+	 }
+    
+    function initLoading(){
+        $("body").append('<!-- loading -->' +
+                '<div class="modal fade" id="loading" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static">' +
+                '<div class="modal-dialog" role="document">'+
+                '<div class="modal-content">' +
+                '<div class="modal-header">' +
+                '<h4 class="modal-title" id="myModalLabel">提示</h4>' +
+                '</div>' +
+                '<div id="loadingText" class="modal-body">' +
+                '<span class="glyphicon glyphicon-refresh" aria-hidden="true">1</span>' +
+                '处理中，请稍候。。。' +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '</div>'
+        );
+    }
+    function showLoading(text){
+        $("#loadingText").html(text);
+        $("#loading").modal("show");
+    }
+    function hideLoading(){
+        $("#loading").modal("hide");
+    }
+	
+</script>
+</html>

@@ -5,7 +5,7 @@
   <groupId>com.cisco</groupId>
   <artifactId>client</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <packaging>war</packaging>
 
   <name>client</name>
   <url>http://maven.apache.org</url>
@@ -37,6 +37,13 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		
+		<!--tomcat外部部署  -->
+		<dependency>
+         <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-tomcat</artifactId>
+          <scope>provided</scope>
+        </dependency>
 		
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -135,7 +142,7 @@
 	</dependencies>
 
 	<build>
-	<finalName>converter</finalName>
+	<finalName>client</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

@@ -120,16 +120,19 @@
 </body>
 
 <script>
+
+var client="/client";
+
 var grid = $("#grid").bootgrid({
     ajax: true,
     post: function ()
     {
     },
-    url: "/ppt/grid/data",
+    url: client+"/ppt/grid/data",
     formatters: {
         "commands": function(column, row)
         {
-        	 return '<button title="预览" value="'+row.id+'" type="button" id="preview_'+row.id+'" class="btn btn-sm btn-success  command-view" data-row-id= "'+row.id+'"><span class="glyphicon glyphicon-zoom-in"></span></button>'
+        	 return '<button title="预览" value="'+row.id+'" type="button" id="preview_'+row.id+'" class="btn btn-sm btn-success  command-view" data-row-id= "'+row.id+'"><span class="glyphicon glyphicon-floppy-open"></span></button>'
         	 +'<button title="下载" value="'+row.id+'" type="button" id="button_'+row.id+'" class="btn btn-sm btn-primary command-download" data-row-id= "'+row.id+'"><span class="glyphicon glyphicon-cloud-download"></span></button>'
         	 +'<button title="删除" value="'+row.id+'" type="button" id="delete_'+row.id+'" class="btn btn-sm btn-danger command-delete" data-row-id= "'+row.id+'"><span class="glyphicon glyphicon-trash"></span></button>';     
         }
@@ -138,15 +141,15 @@ var grid = $("#grid").bootgrid({
 {
     /* Executes after data is loaded and rendered */
     grid.find(".command-view").on("click", function(e)
-    {showLoading("loading");
-    	location.href ="preview/"+$(this).val();
+    {
+    	location.href =client+"/preview/"+$(this).val();
     	
     }).end().find(".command-download").on("click", function(e)
     {
-    	location.href = "/download/"+$(this).val();
+    	location.href = client+"/download/"+$(this).val();
     }).end().find(".command-delete").on("click", function(e)
     {	  	   						
-			var ul = "/delete/"+$(this).val();
+			var ul = client+"/delete/"+$(this).val();
 			swal({
 				title: "操作提示", //弹出框的title
 				text: "确定删除吗？", //弹出框里面的提示文本
@@ -166,23 +169,32 @@ var grid = $("#grid").bootgrid({
     });
 });
 $(document).ready(function () {  	
-	Initfileinput("/upload");
-    initLoading();
+	Initfileinput(client+"/upload");
+
+    $(function(){
+        //table的最后一列不给其title赋值
+      var cellIndex=parseInt($(".table th").length)-1;
+      $(".table tbody tr td").each(function(){
+   	       if(this.cellIndex != cellIndex){
+   	            $(this).attr("title",$(this).text());
+   	            //alert($(this).parent().get(0).rowIndex);输出所在行
+   	          }
+   	    });
+     });
+    
 	        });  
-	 
-	
 	
 	$(document).ready(
 	      function(){
 	    	  $("button[id^='preview']").click(
 	    		function(){
-	    			location.href ="preview/"+$(this).val();
+	    			location.href =client+"/preview/"+$(this).val();
 	    			/* alert("Preview"+$(this).val()); */
 	    		}	  
 	    	  );
 	    	  $("button[id^='download']").click(
 	  	    		function(){
-	  	    			location.href = "/download/"+$(this).val();
+	  	    			location.href = client+"/download/"+$(this).val();
 	  	    			/* alert("download"+$(this).val()); */
 	  	    		}	  
 	  	    	  );
@@ -190,7 +202,7 @@ $(document).ready(function () {  
 	  	    		function(){
 	  	    			/* location.href ="/delete/"+$(this).val(); */
 	  	    			/* alert("delete"+$(this).val()); */
-	  	    			var ul = "/delete/"+$(this).val();
+	  	    			var ul = client+"/delete/"+$(this).val();
 	  	    			swal({
 	  	    				title: "操作提示", //弹出框的title
 	  	    				text: "确定删除吗？", //弹出框里面的提示文本
@@ -267,30 +279,6 @@ $(document).ready(function () {  
 		 $("#grid").bootgrid("reload");
 	 }
     
-    function initLoading(){
-        $("body").append('<!-- loading -->' +
-                '<div class="modal fade" id="loading" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="static">' +
-                '<div class="modal-dialog" role="document">'+
-                '<div class="modal-content">' +
-                '<div class="modal-header">' +
-                '<h4 class="modal-title" id="myModalLabel">提示</h4>' +
-                '</div>' +
-                '<div id="loadingText" class="modal-body">' +
-                '<span class="glyphicon glyphicon-refresh" aria-hidden="true">1</span>' +
-                '处理中，请稍候。。。' +
-                '</div>' +
-                '</div>' +
-                '</div>' +
-                '</div>'
-        );
-    }
-    function showLoading(text){
-        $("#loadingText").html(text);
-        $("#loading").modal("show");
-    }
-    function hideLoading(){
-        $("#loading").modal("hide");
-    }
-	
+    
 </script>
 </html>

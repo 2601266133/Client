@@ -19,7 +19,7 @@
     }
     
     /* Set height of the grid so .sidenav can be 100% (adjust as needed) */
-    .row.content {height: 450px}
+    .row.content {height: 500px}
     
     /* Set gray background color and 100% height */
     .sidenav {
@@ -81,55 +81,219 @@
   
 <div class="container-fluid text-center">    
   <div class="row content">
-    <div class="col-sm-2 sidenav">     
-     <button id="btn-back" type="button" class="btn btn-primary btn-outline-primary">Back</button>
+    <div class="col-sm-1 sidenav">   
+    <div style="width: 100%;">  
+     <button id="btn-back" type="button" class="btn btn-primary btn-outline-primary" th:value="${pptId}">Back</button>
     </div>
-    <div class="col-sm-8 text-left">
-    
-    <div id="images" class="carousel slide">
+    </div>
+
+    <div class="col-sm-8 text-center">
+          <input id="currentpage" type="text" width="5px" th:value="${firstPage}" hidden="true"/>
+          <img id="theImage" src="" style="width: 100%; height: 100%;"/>         
+
+<!-- loading -->
+<!-- <div class="modal fade" id="loading" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop='static'>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="myModalLabel">提示</h4>
+      </div>
+      <div class="modal-body">
+        请稍候。。。<span id="result"></span>
+      </div>
+    </div>
+  </div>
+</div> -->
+
+<div class="modal fade" id="loading" data-backdrop='static'>
+    <div role="dialog" style="width: 200px;height:20px; z-index: 20000; position: absolute; text-align: center; left: 50%; top: 50%;margin-left:-100px;margin-top:-10px">
+        <div class="progress progress-striped active" style="margin-bottom: 0;">
+            <div class="progress-bar" style="width: 100%;"></div>
+        </div>
+        <h5 style="color: #00BFFF;"><b>正在加载...</b></h5>
+    </div>
+</div>
+
+
+
+<!--     <div id="images" class="carousel slide">
  
-  <!-- 指示符 -->
+ <div id="myCarousel" class="carousel slide" data-ride="carousel">
+  指示符
  <ol class="carousel-indicators" th:each="map : ${iMap}">
     <li data-target="#images" th:class="('1' eq ${map.key})?'active':''" ></li>
   </ol> 
  
-  <!-- 轮播图片 -->
+  轮播图片
   <div class="carousel-inner">
   
   <div  th:each="map : ${iMap}" th:class="('1' eq ${map.key})?'item active':'item'">
-      <img th:src="@{'/images/'+${map.value}}"/>
+      <img th:src="@{'/images/'+${map.value}}" style="height:500px;width:100%;display: block"/>
       <div class="carousel-caption" th:text="${map.key}"></div>
     </div>
   
   </div>
  
-  <!-- 左右切换按钮 -->
- <a class="carousel-control left" href="#images" data-slide="prev">&lsaquo;</a>
-	<a class="carousel-control right" href="#images" data-slide="next">&rsaquo;</a>
+  左右切换按钮
+ <a class="carousel-control left" href="#images" data-slide="prev">
+  <span class="icon-prev" aria-hidden="true"></span>
+    <span class="sr-only">Previous</span></a>
+	<a class="carousel-control right" href="#images" data-slide="next">
+	 <span class="icon-next" aria-hidden="true"></span>
+    <span class="sr-only">Next</span></a>
  
-</div>
-    </div>
+ </div>
+</div -->
+    </div>   
+       
   </div>
 </div>
 
 <footer class="container-fluid text-center">
-  <p>Footer Text</p>
+  <button id="previous" type="button" style="width: 10%;" class="btn btn-primary btn-outline-primary"><span class="glyphicon glyphicon-menu-left"></span>Previous</button> 
+          <input id="showcurrentpage" type="text" style="width: 5%;color: #000000;" th:value="${firstPage}" disabled="disabled"/> of total <input id="totalpage" type="text" style="width: 5%;color: #000000;" th:value="${orderIdMap.size()}" disabled="disabled"/>
+          <button id="next" type="button" style="width: 10%;" class="btn btn-primary btn-outline-primary">Next<span class="glyphicon glyphicon-menu-right"></span></button> Go to page : <input onkeyup="this.value=this.value.replace(/\D/g,'')" onafterpaste="this.value=this.value.replace(/\D/g,'')" id="gotopage" type="text" value="" style="width: 5%;color: #000000;"/><button id="gotoBtn" type="button" style="width: 5%;" class="btn btn-primary btn-outline-primary">Go<span class="glyphicon glyphicon-hand-up"></span></button>
 </footer>
 
 </body>
+<script  type="text/javascript">
 
-<script>
+var client="/client";
+
+function loading(){ 
+	$('#loading').modal('show');
+}
+
+$("#loading").modal({keyboard:false});
+
+$('#loading').modal({backdrop: 'static', keyboard: false});
+
+
+function loaded(){ 
+	document.getElementById("theImage").onload=function(){
+		$('#loading').modal('hide');
+};
+}
+
+$(document).ready(
+		function(){
+			$.ajax({
+			       url:client+"/preview/"+$("#btn-back").val()+"/image/"+$("#currentpage").val(),
+			       type:"GET",
+			       beforeSend:loading,
+			       success: function(data){	
+			    	   var path = client+"/images/"+data;
+				   $("#theImage").attr("src",path);
+				   loaded();
+			                              }
+			              }
+			             );
+		}
+		);
+
+
+
 $(document).ready(
 		function(){
 			$("#btn-back").click(
 			function(){
-				location.href ="/file";
+				location.href =client+"/file";
 			}		
 			);
 			
 		}
 		
 		);
+		
+$(document).ready(
+		function(){
+				$("#gotoBtn").click(
+					function(){
+						       var currentVal;
+						       if(isNaN($("#gotopage").val())|| ""==$("#gotopage").val()){
+						    	   return;						    	  
+						       }else{						    	   
+						    	   currentVal = parseInt($("#gotopage").val()); 
+						       }
+						       if(currentVal>parseInt($("#totalpage").val())){
+						    	   currentVal=parseInt($("#totalpage").val());
+						       }
+						       if(currentVal==0){
+						    	   currentVal=1;
+						       }
+						       $.ajax({
+						       url:client+"/preview/"+$("#btn-back").val()+"/image/"+currentVal.toString(),
+						       type:"GET",
+						       beforeSend:loading,
+						       success: function(data,loaded){	
+						    	   var path = client+"/images/"+data;
+						      $("#gotopage").attr("value",currentVal.toString());	
+							   $("#theImage").attr("src",path);
+							   $("#currentpage").attr("value",currentVal.toString());
+							   $("#showcurrentpage").attr("value",currentVal.toString());	
+							   
+						                              }
+						              }
+						             );
+						       
+					           }	
+				                 );
+		           }
+	                 );	
+		
+		
+$(document).ready(
+	function(){
+			$("#next").click(
+				function(){
+					       var currentVal = parseInt($("#currentpage").val())+1;
+					       if(currentVal>parseInt($("#totalpage").val())){
+					    	   currentVal=parseInt(1);
+					       }
+					       $.ajax({
+					       url:client+"/preview/"+$("#btn-back").val()+"/image/"+currentVal.toString(),
+					       type:"GET",
+					       beforeSend:loading,
+					       success: function(data,loaded){	
+					    	   var path = client+"/images/"+data;
+						   $("#theImage").attr("src",path);
+						   $("#currentpage").attr("value",currentVal.toString());
+						   $("#showcurrentpage").attr("value",currentVal.toString());	
+					                              }
+					              }
+					             );
+					       
+				           }	
+			                 );
+	           }
+                 );	
+$(document).ready(
+		function(){
+				$("#previous").click(
+					function(){					
+					       var currentVal = parseInt($("#currentpage").val())-1;
+					       if(currentVal==parseInt(0)){
+					    	   currentVal=parseInt($("#totalpage").val());
+					        }
+					         $.ajax({
+					           url:client+"/preview/"+$("#btn-back").val()+"/image/"+currentVal.toString(),
+						       type:"GET",
+						       beforeSend:loading,
+						       success: function(data,loaded){	
+						    	   var path = client+"/images/"+data;
+							   $("#theImage").attr("src",path);
+							   $("#currentpage").attr("value",currentVal.toString());
+							   $("#showcurrentpage").attr("value",currentVal.toString());	
+						                              }
+						              }
+						             );
+					           }	
+				                 );
+		           }
+	                 );		
+			
+
+
 
 </script>
 </html>

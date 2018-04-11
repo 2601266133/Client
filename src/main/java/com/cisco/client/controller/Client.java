@@ -7,14 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.zip.ZipException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,17 +37,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.cisco.client.model.ImageInformation;
 import com.cisco.client.model.PPTGridData;
 import com.cisco.client.model.PPTInformation;
+import com.cisco.client.model.RequestResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 public class Client {
+
+	@Value("${server.uri}")
+	private String serverURI;
 
 	@Value("${pptx.download-path}")
 	private String pptPath;
@@ -60,11 +63,11 @@ public class Client {
 
 	@RequestMapping("file")
 	public ModelAndView file() throws IOException {
-		String status = httpClientCommonGet("http://10.224.217.12:8080/converter/ppts");
+		String status = httpClientCommonGet(serverURI + "/ppts");
 		ObjectMapper oMp = new ObjectMapper();
-		List<PPTInformation> list = oMp.readValue(status, List.class);
+		RequestResult result = oMp.readValue(status, RequestResult.class);
 		ModelAndView mv = new ModelAndView("/file");
-		mv.addObject("pptInfors", list);
+		mv.addObject("pptInfors", result.getPptInfos());
 		return mv;
 	}
 
@@ -73,14 +76,15 @@ public class Client {
 		String current = request.getParameter("current");
 		String rowCount = request.getParameter("rowCount");
 		PPTGridData gridData = new PPTGridData();
-		String status = httpClientCommonGet("http://10.224.217.12:8080/converter/ppts");
+		String status = httpClientCommonGet(serverURI + "/ppts");
 		ObjectMapper oMp = new ObjectMapper();
-		List<LinkedHashMap> list = oMp.readValue(status, List.class);
+		RequestResult result = oMp.readValue(status, RequestResult.class);
+		List<PPTInformation> list = result.getPptInfos();
 		String total = String.valueOf(list.size());
-		List<LinkedHashMap> showList = new ArrayList<LinkedHashMap>();
+		List<PPTInformation> showList = new ArrayList<PPTInformation>();
 		int start = (Integer.parseInt(current) - 1) * (Integer.parseInt(rowCount));
 		int end = (Integer.parseInt(current) - 1) * (Integer.parseInt(rowCount)) + (Integer.parseInt(rowCount));
-		if (1 == (Integer.parseInt(current) % Integer.parseInt(rowCount))) {
+		if (Integer.parseInt(current) != 1 && 1 == (Integer.parseInt(current) % Integer.parseInt(rowCount))) {
 			start = Integer.parseInt(current);
 			end = Integer.parseInt(current) + Integer.parseInt(rowCount);
 		}
@@ -128,39 +132,87 @@ public class Client {
 	}
 
 	@RequestMapping(value = "/preview/{id}")
-	public ModelAndView download(@PathVariable String id) throws ClientProtocolException, IOException {
-		httpClientDownload("http://10.224.217.12:8080/converter/download/ppt/" + id + "/images",
-				imagesPath + File.separator + id + File.separator);
-		File file = new File(imagesPath + File.separator + id + File.separator);
-		File[] fileArry = file.listFiles();
-		Map<Integer, String> map = new HashMap<Integer, String>();
-		for (File f : fileArry) {
-			if (f.getName().toLowerCase().endsWith("zip")) {
-				ZipFile zipFile = new ZipFile(f);
-				map = unZip(zipFile, id);
-			}
-		}
-		List<Entry<Integer, String>> list = new ArrayList<Map.Entry<Integer, String>>(map.entrySet());
-		Collections.sort(list, new Comparator<Map.Entry<Integer, String>>() {
-
-			@Override
-			public int compare(Entry<Integer, String> o1, Entry<Integer, String> o2) {
-				return o1.getKey().compareTo(o2.getKey());
-			}
-		});
-		LinkedHashMap<Integer, String> linkMap = new LinkedHashMap<Integer, String>();
-		for (Entry<Integer, String> e : list) {
-			linkMap.put(e.getKey(), e.getValue());
-			System.out.println(e.getKey() + "  " + e.getValue());
+	public ModelAndView preview(@PathVariable String id) throws IOException {
+		String status = httpClientCommonGet(serverURI + "/ppt/" + id);
+		ObjectMapper oMp = new ObjectMapper();
+		RequestResult result = oMp.readValue(status, RequestResult.class);
+		List<ImageInformation> imagesList = result.getPptInfo().getImageInfoList();
+		Map<Integer, String> orderIdMap = new LinkedHashMap<Integer, String>();
+		for (int i = 1; i <= imagesList.size(); i++) {
+			orderIdMap.put(i, imagesList.get(i - 1).getId());
 		}
 		ModelAndView mv = new ModelAndView("/preview");
-		mv.addObject("iMap", linkMap);
+		mv.addObject("orderIdMap", orderIdMap);
+		mv.addObject("pptId", id);
+		mv.addObject("firstPage", 1);
 		return mv;
 	}
 
+	@RequestMapping(value = "/preview/{pId}/image/{imgId}", method = RequestMethod.GET)
+	public String downloadImageById(@PathVariable String pId, @PathVariable String imgId)
+			throws ClientProtocolException, IOException {
+		String status = httpClientCommonGet(serverURI + "/ppt/" + pId);
+		ObjectMapper oMp = new ObjectMapper();
+		RequestResult result = oMp.readValue(status, RequestResult.class);
+		List<ImageInformation> imagesList = result.getPptInfo().getImageInfoList();
+		Map<Integer, String> orderIdMap = new LinkedHashMap<Integer, String>();
+		for (int i = 1; i <= imagesList.size(); i++) {
+			orderIdMap.put(i, imagesList.get(i - 1).getId());
+		}
+
+		File file = httpClientDownload(
+				serverURI + "/download/ppt/" + pId + "/image/" + orderIdMap.get(Integer.valueOf(imgId)),
+				imagesPath + File.separator + pId + File.separator);
+		return (pId + File.separator + file.getName()).replace("\\", "/");
+	}
+
+	// @RequestMapping(value = "aaaaaaaa")
+	// public ModelAndView download(@PathVariable String id) throws
+	// ClientProtocolException, IOException {
+	// File file = new File(imagesPath + File.separator + id + File.separator);
+	// File[] fileArry = file.listFiles();
+	// if (fileArry == null) {
+	// httpClientDownload("http://10.224.217.12:9080/converter/download/ppt/" + id +
+	// "/images",
+	// imagesPath + File.separator + id + File.separator);
+	// }
+	// file = new File(imagesPath + File.separator + id + File.separator);
+	// fileArry = file.listFiles();
+	// Map<Integer, String> map = new HashMap<Integer, String>();
+	// for (File f : fileArry) {
+	// if (f.getName().toLowerCase().endsWith("zip")) {
+	// ZipFile zipFile = new ZipFile(f);
+	// map = unZip(zipFile, id);
+	// zipFile.close();
+	// f.delete();
+	// } else if (f.getName().toLowerCase().endsWith("svg")) {
+	// map.put(Integer.valueOf(f.getName().split("_")[0]),
+	// (id + File.separator + f.getName()).replace("\\", "/"));
+	// }
+	// }
+	// List<Entry<Integer, String>> list = new ArrayList<Map.Entry<Integer,
+	// String>>(map.entrySet());
+	// Collections.sort(list, new Comparator<Map.Entry<Integer, String>>() {
+	//
+	// @Override
+	// public int compare(Entry<Integer, String> o1, Entry<Integer, String> o2) {
+	// return o1.getKey().compareTo(o2.getKey());
+	// }
+	// });
+	// LinkedHashMap<Integer, String> linkMap = new LinkedHashMap<Integer,
+	// String>();
+	// for (Entry<Integer, String> e : list) {
+	// linkMap.put(e.getKey(), e.getValue());
+	// System.out.println(e.getKey() + " " + e.getValue());
+	// }
+	// ModelAndView mv = new ModelAndView("/preview");
+	// mv.addObject("iMap", linkMap);
+	// return mv;
+	// }
+
 	@RequestMapping("/delete/{id}")
 	public ModelAndView deleteFile(@PathVariable String id) throws IOException {
-		String status = httpClientCommonGet("http://10.224.217.12:8080/converter/delete/ppt/" + id);
+		String status = httpClientCommonGet(serverURI + "/delete/ppt/" + id);
 		deleteAllById(pptPath + id + File.separator);
 		deleteAllById(imagesPath + id + File.separator);
 		return new ModelAndView("redirect:/file");
@@ -190,7 +242,7 @@ public class Client {
 		CloseableHttpClient httpclient = HttpClients.createDefault();
 		InputStream in = file.getInputStream();
 		try {
-			HttpPost httppost = new HttpPost("http://10.224.217.12:8080/converter/upload");
+			HttpPost httppost = new HttpPost(serverURI + "/upload");
 			StringBody comment = new StringBody("A binary file of some kind", ContentType.TEXT_PLAIN);
 
 			HttpEntity reqEntity = MultipartEntityBuilder.create()
@@ -218,11 +270,10 @@ public class Client {
 			// JsonNode jNode = oMp.readTree(status);
 			// jNode.findValuesAsText("id");
 
-			String ll = httpClientCommonGet("http://10.224.217.12:8080/converter/ppts");
+			String ll = httpClientCommonGet(serverURI + "/ppts");
 			ObjectMapper oMp = new ObjectMapper();
-			List<PPTInformation> pptInfors = oMp.readValue(ll, List.class);
-			return pptInfors;
-			// return new ModelAndView("redirect:/file");
+			RequestResult result = oMp.readValue(ll, RequestResult.class);
+			return result.getPptInfos();
 		} finally {
 			httpclient.close();
 			in.close();
@@ -233,16 +284,15 @@ public class Client {
 	@RequestMapping("/download/{pptId}")
 	private void getPPTFileById(@PathVariable String pptId, HttpServletResponse response)
 			throws ClientProtocolException, IOException {
-		httpClientDownload("http://10.224.217.12:8080/converter/download/ppt/" + pptId,
-				pptPath + pptId + File.separator);
+		httpClientDownload(serverURI + "/download/ppt/" + pptId, pptPath + pptId + File.separator);
 
-		String status = httpClientCommonGet("http://10.224.217.12:8080/converter/ppt/" + pptId);
+		String status = httpClientCommonGet(serverURI + "/ppt/" + pptId);
 		ObjectMapper oMp = new ObjectMapper();
-		PPTInformation info = oMp.readValue(status, PPTInformation.class);
+		RequestResult result = oMp.readValue(status, RequestResult.class);
 		response.setContentType("application/octet-stream");
-		response.setHeader("Content-Disposition", "attachment;fileName=" + info.getFileNewName());
+		response.setHeader("Content-Disposition", "attachment;fileName=" + result.getPptInfo().getFileNewName());
 
-		File file = new File(pptPath + pptId + File.separator + info.getFileOrignName());
+		File file = new File(pptPath + pptId + File.separator + result.getPptInfo().getFileOrignName());
 
 		FileInputStream fis = null;
 		OutputStream os = null;
@@ -265,8 +315,9 @@ public class Client {
 
 	}
 
-	private void httpClientDownload(String url, String filePath) throws ClientProtocolException, IOException {
+	private File httpClientDownload(String url, String filePath) throws ClientProtocolException, IOException {
 		CloseableHttpClient httpclient = HttpClients.createDefault();
+		File file = null;
 		try {
 			HttpGet httpGet = new HttpGet(url);
 			System.out.println("executing request " + httpGet.getRequestLine());
@@ -276,7 +327,7 @@ public class Client {
 				System.out.println(response2.getStatusLine());
 				HttpEntity resEntity = response2.getEntity();
 				if (resEntity != null) {
-					File file = new File(filePath + getFileName(response2.getFirstHeader("Content-Disposition")));
+					file = new File(filePath + getFileName(response2.getFirstHeader("Content-Disposition")));
 					downloadPPT(file, resEntity);
 					System.out.println("Response content length: " + resEntity.getContentLength());
 				}
@@ -287,7 +338,7 @@ public class Client {
 		} finally {
 			httpclient.close();
 		}
-
+		return file;
 	}
 
 	private void downloadPPT(File file, HttpEntity resEntity) throws IOException {
@@ -322,6 +373,7 @@ public class Client {
 			map.put(Integer.valueOf(entry.getName().split("_")[0]),
 					(pptId + File.separator + entry.getName()).replace("\\", "/"));
 		}
+		zipFile.close();
 		return map;
 	}
 

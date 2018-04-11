@@ -1,6 +1,19 @@
 pptx:
-   download-path: C:/Users/jacsong2/Desktop/PPTconvert/client/ppt/
+   download-path: ../webapps/client/ppt/
    
 images:
-   image-path: C:/Users/jacsong2/Desktop/PPTconvert/client/ppt/images/
+   image-path: ../webapps/client/ppt/images/
+   
+ 
+
+# to call libreoffice API, server.uri use: http://10.224.217.12:8080/converter 
+# to call POI API, server.uri use: http://10.224.217.12:9080/converter  
+   
+server:
+   uri: http://10.224.217.12:9080/converter 
+   
+   
+   
+   
+
    

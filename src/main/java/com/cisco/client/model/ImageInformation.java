@@ -6,8 +6,17 @@ public class ImageInformation {
 	String pptId;
 	String imagePath;
 	String imageName;
+	String size;
 	String createdDate;
 	String createdBy;
+
+	public String getSize() {
+		return size;
+	}
+
+	public void setSize(String size) {
+		this.size = size;
+	}
 
 	public String getId() {
 		return id;

@@ -1,13 +1,12 @@
 package com.cisco.client.model;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 
 public class PPTGridData {
 
 	String current;
 	String rowCount;
-	List<LinkedHashMap> rows;
+	List<PPTInformation> rows;
 	String total;
 
 	public String getCurrent() {
@@ -26,11 +25,11 @@ public class PPTGridData {
 		this.rowCount = rowCount;
 	}
 
-	public List<LinkedHashMap> getRows() {
+	public List<PPTInformation> getRows() {
 		return rows;
 	}
 
-	public void setRows(List<LinkedHashMap> rows) {
+	public void setRows(List<PPTInformation> rows) {
 		this.rows = rows;
 	}
 
